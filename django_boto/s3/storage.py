@@ -24,7 +24,7 @@ class S3Storage(Storage):
 
     def __init__(self, bucket_name=None, key=None, secret=None, location=None,
                  host=None, policy=None, replace=True, force_http_url=False,
-                 bucket_exists=False):
+                 bucket_exists=True):
 
         self.bucket_name = bucket_name if bucket_name else setting(
             'BOTO_S3_BUCKET')
@@ -63,10 +63,7 @@ class S3Storage(Storage):
     @property
     def bucket(self):
         if not self._bucket:
-            self.s3 = connect_s3(
-                aws_access_key_id=self.key,
-                aws_secret_access_key=self.secret,
-                host=self.host)
+            self.s3 = self.get_connection()
             if self.bucket_exists:
                 self._bucket = self.s3.get_bucket(self.bucket_name)
             else:
@@ -180,5 +177,10 @@ class S3Storage(Storage):
         return timezone.make_naive(
             parse_date(self.bucket.lookup(name).last_modified),
             timezone.get_default_timezone())
+
+    def get_connection(self):
+        return connect_s3(aws_access_key_id=self.key,
+                          aws_secret_access_key=self.secret,
+                          host=self.host)
 
     created_time = accessed_time = modified_time
